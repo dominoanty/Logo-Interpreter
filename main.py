@@ -13,73 +13,105 @@ penerase
 setfloodcolor
 fill"""
 
+#KEYWORDS
+keywords= keywords.split()
 
-keywords_key = keywords.split()
+#TOKENIZER KEYS
+alphabetical = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+numerical    = "1234567890"
 
 whitespace_key = "\t \n"
 
-operator_key = "[ ]".split()
+operator_key = "[]"
 
+eof_key = '\0'
+
+#TOKENS
+IDENTIFIER = "Indentifier"
 KEYWORD = "Keyword"
 WHITESPACE = "Whitespace"
 NUMERIC = "Numeric"
 OPERATOR = "Operator"
 COMMENT = "Comment"
-EOF = '\0'
-class Token
+EOF = 'Eof'
+
+class Token:
 
 	def __init__(self, startChar):
 		self.value = startChar
 		self.type = None
 
+	def display(self):
+		print self.value + " " + self.type
 
 
-class Tokenizer
+
+class Tokenizer:
 
 	def __init__(self,filename):
 		self.scanner = Scanner(filename)
 
 	def getToken(self):
-		char = getChar()
+		char = self.getChar()
+		
+		if char in " \t \n":
+			print "WHITESPACE"
+			char = self.getChar()
 
-	    while char in whitespace_key or charAhead == "/*":
+			while char in " \t \n":
+				char = self.getChar()
+			self.scanner.rewind()
+			return None
 
-	        # process whitespace
-	        while char in whitespace_key:
-	            token = Token(char)
-	            token.type = WHITESPACE
-	            char = getChar() 
+		token = Token(char)
+		print "TOKEN CREATED"
 
-	            while char in whitespace_key:
-	                token.value += c1
-	                char = getChar() 
-	                      
+		if char in eof_key:
+			print "EOF TOKEN"
+			token.type = EOF
+			return token
 
-	        # process comments
-	        while self.charAhead == "/*":
-	            # we found comment start
-	            token = Token(self.charAhead)
-	            token.type = COMMENT
+		if char in alphabetical:
+			print "IDENTIFIER TOKEN"
+			token.type = IDENTIFIER
+			char = self.getChar()
 
-	            getChar() # read past the first  character of a 2-character token
+			while char in alphabetical + numerical:
+				token.value += char
+				char = self.getChar()
 
-	            while not (self.charAhead == "*/"):
-	                if char == ENDMARK:
-	                    print "Comment not ended"
-	                token.value += char
-	                char = getChar() 
+			self.scanner.rewind()
 
-	            token.value += charAhead  # append the */ to the token cargo
+			if token.value in keywords:
+				print "KEYWORD TOKEN"
+				token.type = KEYWORD
+			return token
 
-	            getChar() 
+		if char in numerical:
+			print "NUMERIC TOKEN"
+			token.type = NUMERIC
+			char = self.getChar()
 
-	    
+			while char in numerical:
+				token.value += char
+				char = self.getChar()
+			self.scanner.rewind()
+			return token
+
+		if char in operator_key:
+			print "OPERATOR TOKEN"
+			token.type = char
+			return token
 
 	def getChar(self):
 
 		char   = self.scanner.scan()
 		self.charAhead  = char + self.scanner.lookAhead()
 		return char
+
+	def close(self):
+		self.scanner.close()
 
 
 class Scanner:
@@ -91,7 +123,7 @@ class Scanner:
 		self.filename = filename
 		
 		try:
-			self.file  = open(filename, 'r')
+			self.file  = open(filename, 'r').read()
 			self.eof   = len(self.file) - 1
 			self.index = 0
 
@@ -102,23 +134,36 @@ class Scanner:
 		
 		if	self.index < self.eof:
 
-			char = self.file[index]
-			index = index +  1
+			char = self.file[self.index]
+			self.index = self.index +  1
 
-			if char == '\n' or char == '\r':
-				print 'newline'
-				return '\n'
-			elif char == ' ':
-				print 'whitespace'
-				return ' '
-			else:
-				print char
-				return char
-		return -1
+			return char
+
+		return '\0'
+
+	def rewind(self):
+		if self.index == self.eof:
+			return
+		self.index-=1
+
 	def lookAhead(self):
-		return self.file[index+1]
+		if self.index + 1 < self.eof :
+			return self.file[self.index+1] 
+		else:
+			return '\0'
+
+	def close(self):
+		self.file.close()
 
 
 print "Enter a file : "
 filename = raw_input()
 T = Tokenizer(filename)
+while True:
+	print "TOKENIZER STEP"
+	token = T.getToken()
+	if token is  not None:
+		token.display()
+		if token.type == EOF:
+			break
+	raw_input()
