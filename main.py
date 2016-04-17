@@ -1,17 +1,23 @@
+from turtle import Turtle
+import sys, pygame
+import math
+import time
+
 keywords = """
 fd
 bk
 lt
 rt
 arc
-arc2
 st
 ht
 pu
 pd
 penerase
 setfloodcolor
-fill"""
+fill
+repeat
+"""
 
 #KEYWORDS
 keywords= keywords.split()
@@ -23,7 +29,7 @@ numerical    = "1234567890"
 
 whitespace_key = "\t \n"
 
-operator_key = "[]"
+operators = ["[", "]"]
 
 eof_key = '\0'
 
@@ -35,6 +41,16 @@ NUMERIC = "Numeric"
 OPERATOR = "Operator"
 COMMENT = "Comment"
 EOF = 'Eof'
+
+WINDOWX    = 500
+WINDOWY    = 500
+
+#TURTLE PROPERTIES
+TURTLE_WIDTH = 25
+TURTLE_HEIGHT = 25
+HYPOTENUSE = int(math.sqrt(15**2 + 20**2))
+NOSEANGLE  = 15
+
 
 class Token:
 
@@ -54,7 +70,8 @@ class Tokenizer:
 
 	def getToken(self):
 		char = self.getChar()
-		
+		print char
+
 		if char in " \t \n":
 			print "WHITESPACE"
 			char = self.getChar()
@@ -84,7 +101,6 @@ class Tokenizer:
 			self.scanner.rewind()
 
 			if token.value in keywords:
-				print "KEYWORD TOKEN"
 				token.type = KEYWORD
 			return token
 
@@ -99,7 +115,7 @@ class Tokenizer:
 			self.scanner.rewind()
 			return token
 
-		if char in operator_key:
+		if char in operators:
 			print "OPERATOR TOKEN"
 			token.type = char
 			return token
@@ -154,16 +170,147 @@ class Scanner:
 
 	def close(self):
 		self.file.close()
+class Parser:
+
+	def __init__(self, filename):
+		self.T = Tokenizer(filename)
+		self.tokenList = []
+		self.createTokenList()
+		self.dispTokenList()
+		self.index = -1
+		self.history = []
+
+	def createTokenList(self):
+
+		print "TOKENIZER STEP"
+		while True:
+			token = self.T.getToken()
+			if token is  not None:
+				token.display()
+				self.tokenList.append(token)
+				if token.type == EOF:
+					break
+				
+			raw_input()
+
+	def dispTokenList(self):
+		for token in self.tokenList:
+			token.display()
+
+
+	def lookNextToken(self):
+		return self.tokenList[self.index + 1]
+
+	def currToken(self):
+		return self.tokenList[self.index]
+
+	def getNextToken(self):
+		self.index += 1
+		return self.tokenList[self.index]
+
+	def graphInit(self):
+				#graphics part
+
+		pygame.init()
+		self.white = 255, 255 , 255
+
+		self.screen = pygame.display.set_mode((WINDOWX,WINDOWY))
+
+		self.T = Turtle(WINDOWX,WINDOWY)
+		self.T.getImage(pygame.image.load("logo2.png"))
+
+	def parse(self):
+			
+		self.parseSentence()
+		while True:
+			tokenAhead = self.lookNextToken()
+			if tokenAhead == None:
+				break
+			elif tokenAhead.type == EOF:
+				break
+			elif tokenAhead.type == KEYWORD:
+				self.parseSentence()
+			else:
+				break
+
+
+
+	def parseSentence(self):
+		
+		
+
+		#parsing 
+		nextToken = self.lookNextToken()
+		if nextToken.value in ['fd', 'bk', 'rt', 'lt']:
+			self.Match()
+			self.Match(NUMERIC)
+
+			# graphics
+			if nextToken.value == 'fd':
+				self.T.mvForward(int(self.currToken().value), self.screen)
+			if nextToken.value == 'bk':
+				self.T.mvBackward(int(self.currToken().value), self.screen)
+			if nextToken.value == 'lt':
+				self.T.rotate(int(self.currToken().value))
+			if nextToken.value == 'rt':
+				self.T.rotate(int(-1 * int(self.currToken().value)))
+
+			self.history.append((nextToken.value,self.currToken().value))
+
+
+		if nextToken.value in ['pu', 'pd', 'ht', 'st', 'penerase']:
+			self.Match()
+			if nextToken.value == 'pu':
+				self.T.penUp()
+			if nextToken.value == 'pd':
+				self.T.penDown()
+			if nextToken.value == 'st':
+				self.T.showTurtle()
+			if nextToken.value == 'ht':
+				self.T.hideTurtle()
+			self.history.append(nextToken.value)
+
+		if nextToken.value in ['repeat']:
+			self.Match()
+			self.Match(NUMERIC)
+
+			timesToLoop = int(self.currToken().value)
+
+			self.Match('[')
+			savedIndex = self.index
+			for i in range(0, timesToLoop):
+				self.parse()
+				if i != timesToLoop -1:
+					self.index = savedIndex
+			self.Match(']')
+			
+
+
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				sys.exit()
+		self.screen.fill(self.white)
+		self.T.draw(self.screen)
+		pygame.display.flip()	
+		raw_input()
+
+
+	def Match(self, expectedTokenType = None):
+		token = self.getNextToken()
+		if(expectedTokenType == None):
+			return
+		if(token.type != expectedTokenType):
+			print "Expected token type " + expectedTokenType + " but got " + token.type
+
+
 
 
 print "Enter a file : "
 filename = raw_input()
-T = Tokenizer(filename)
-while True:
-	print "TOKENIZER STEP"
-	token = T.getToken()
-	if token is  not None:
-		token.display()
-		if token.type == EOF:
-			break
-	raw_input()
+P = Parser(filename)
+P.graphInit()
+P.parse()
+print P.history
+
+
+

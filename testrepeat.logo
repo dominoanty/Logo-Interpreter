@@ -1,0 +1,1 @@
+repeat 5 [ fd 20 rt 20 ] 

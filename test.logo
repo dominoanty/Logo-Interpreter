@@ -2,3 +2,9 @@ fd 90
 rt 90
 fd 90
 lt 20
+pu
+fd 35
+rt 20
+pd
+bk 15
+ht
