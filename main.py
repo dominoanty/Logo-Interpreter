@@ -14,7 +14,7 @@ ht
 pu
 pd
 penerase
-setfloodcolor
+setcolor
 fill
 repeat
 """
@@ -59,21 +59,21 @@ class Token:
 		self.type = None
 
 	def display(self):
-		print self.value + " " + self.type
-
+		#print self.value + " " + self.type
+		a = " "
 
 
 class Tokenizer:
 
-	def __init__(self,filename):
-		self.scanner = Scanner(filename)
+	def __init__(self,source):
+		self.scanner = Scanner(source)
 
 	def getToken(self):
 		char = self.getChar()
-		print char
+		#print char
 
 		if char in " \t \n":
-			print "WHITESPACE"
+			#print "WHITESPACE"
 			char = self.getChar()
 
 			while char in " \t \n":
@@ -82,15 +82,15 @@ class Tokenizer:
 			return None
 
 		token = Token(char)
-		print "TOKEN CREATED"
+		#print "TOKEN CREATED"
 
 		if char in eof_key:
-			print "EOF TOKEN"
+			#print "EOF TOKEN"
 			token.type = EOF
 			return token
 
 		if char in alphabetical:
-			print "IDENTIFIER TOKEN"
+			#print "IDENTIFIER TOKEN"
 			token.type = IDENTIFIER
 			char = self.getChar()
 
@@ -105,7 +105,7 @@ class Tokenizer:
 			return token
 
 		if char in numerical:
-			print "NUMERIC TOKEN"
+			#print "NUMERIC TOKEN"
 			token.type = NUMERIC
 			char = self.getChar()
 
@@ -116,7 +116,7 @@ class Tokenizer:
 			return token
 
 		if char in operators:
-			print "OPERATOR TOKEN"
+			#print "OPERATOR TOKEN"
 			token.type = char
 			return token
 
@@ -132,14 +132,14 @@ class Tokenizer:
 
 class Scanner:
 
-	def __init__(self, filename):
+	def __init__(self, source):
 
-		print "Scanner class initialized"
+		#print "Scanner class initialized"
 		
-		self.filename = filename
+		self.source = source
 		
 		try:
-			self.file  = open(filename, 'r').read()
+			self.file  = self.source
 			self.eof   = len(self.file) - 1
 			self.index = 0
 
@@ -168,12 +168,19 @@ class Scanner:
 		else:
 			return '\0'
 
-	def close(self):
-		self.file.close()
+	
 class Parser:
 
-	def __init__(self, filename):
-		self.T = Tokenizer(filename)
+	def __init__(self, source):
+		self.T = Tokenizer(source)
+		self.tokenList = []
+		self.createTokenList()
+		self.dispTokenList()
+		self.index = -1
+		self.history = []
+
+	def reInit(self, source):
+		self.T = Tokenizer(source)
 		self.tokenList = []
 		self.createTokenList()
 		self.dispTokenList()
@@ -182,7 +189,7 @@ class Parser:
 
 	def createTokenList(self):
 
-		print "TOKENIZER STEP"
+		#print "TOKENIZER STEP"
 		while True:
 			token = self.T.getToken()
 			if token is  not None:
@@ -191,7 +198,7 @@ class Parser:
 				if token.type == EOF:
 					break
 				
-			raw_input()
+			#raw_input()
 
 	def dispTokenList(self):
 		for token in self.tokenList:
@@ -199,7 +206,10 @@ class Parser:
 
 
 	def lookNextToken(self):
-		return self.tokenList[self.index + 1]
+		try:
+			return self.tokenList[self.index + 1]
+		except IndexError as e:
+			return None
 
 	def currToken(self):
 		return self.tokenList[self.index]
@@ -216,8 +226,14 @@ class Parser:
 
 		self.screen = pygame.display.set_mode((WINDOWX,WINDOWY))
 
-		self.T = Turtle(WINDOWX,WINDOWY)
-		self.T.getImage(pygame.image.load("logo2.png"))
+		self.Turtle = Turtle(WINDOWX,WINDOWY)
+		self.Turtle.setImage(pygame.image.load("logo2.png"))
+
+		self.screen.fill(self.white)
+		self.Turtle.draw(self.screen)
+		pygame.display.flip()	
+		pygame.display.set_icon(pygame.image.load("logo2.png"))
+		pygame.display.set_caption(" Turtle")
 
 	def parse(self):
 			
@@ -241,19 +257,23 @@ class Parser:
 
 		#parsing 
 		nextToken = self.lookNextToken()
+		if nextToken.value not in keywords:
+			print "Invalid input"
+			return
 		if nextToken.value in ['fd', 'bk', 'rt', 'lt']:
 			self.Match()
-			self.Match(NUMERIC)
+			if(self.Match(NUMERIC) == -1):
+				return
 
 			# graphics
 			if nextToken.value == 'fd':
-				self.T.mvForward(int(self.currToken().value), self.screen)
+				self.Turtle.mvForward(int(self.currToken().value), self.screen)
 			if nextToken.value == 'bk':
-				self.T.mvBackward(int(self.currToken().value), self.screen)
+				self.Turtle.mvBackward(int(self.currToken().value), self.screen)
 			if nextToken.value == 'lt':
-				self.T.rotate(int(self.currToken().value))
+				self.Turtle.rotate(int(self.currToken().value))
 			if nextToken.value == 'rt':
-				self.T.rotate(int(-1 * int(self.currToken().value)))
+				self.Turtle.rotate(int(-1 * int(self.currToken().value)))
 
 			self.history.append((nextToken.value,self.currToken().value))
 
@@ -261,15 +281,28 @@ class Parser:
 		if nextToken.value in ['pu', 'pd', 'ht', 'st', 'penerase']:
 			self.Match()
 			if nextToken.value == 'pu':
-				self.T.penUp()
+				self.Turtle.penUp()
 			if nextToken.value == 'pd':
-				self.T.penDown()
+				self.Turtle.penDown()
 			if nextToken.value == 'st':
-				self.T.showTurtle()
+				self.Turtle.showTurtle()
 			if nextToken.value == 'ht':
-				self.T.hideTurtle()
+				self.Turtle.hideTurtle()
 			self.history.append(nextToken.value)
 
+		if nextToken.value in ['setcolor']:
+			self.Match()
+			try:
+				self.Match(NUMERIC)
+				red = int(self.currToken().value)
+				self.Match(NUMERIC)
+				green = int(self.currToken().value)
+				self.Match(NUMERIC)
+				blue = int(self.currToken().value)
+				self.Turtle.setPenColor(red, green, blue)
+				self.history.append((nextToken.value, red, green, blue))
+			except ValueError as e:
+				print e
 		if nextToken.value in ['repeat']:
 			self.Match()
 			self.Match(NUMERIC)
@@ -290,9 +323,9 @@ class Parser:
 			if event.type == pygame.QUIT:
 				sys.exit()
 		self.screen.fill(self.white)
-		self.T.draw(self.screen)
+		self.Turtle.draw(self.screen)
 		pygame.display.flip()	
-		raw_input()
+		#raw_input()
 
 
 	def Match(self, expectedTokenType = None):
@@ -301,15 +334,26 @@ class Parser:
 			return
 		if(token.type != expectedTokenType):
 			print "Expected token type " + expectedTokenType + " but got " + token.type
+			return -1
 
 
 
 
-print "Enter a file : "
-filename = raw_input()
-P = Parser(filename)
+print "Enter commands : "
+#source = raw_input()
+source = " "
+P = Parser(source)
 P.graphInit()
-P.parse()
+#P.parse()
+while True:
+	source = raw_input()
+	if source == "exit" :
+		break
+	source = source + "  "
+	P.reInit(source)
+	P.parse()
+
+
 print P.history
 
 

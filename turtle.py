@@ -19,24 +19,11 @@ class Turtle:
 		self.angleRad = 0
 		self.pointStart     = []
 		self.pointEnd      = []
+		self.lineColor     = [] 
 		self.isPenUp      = False
 		self.isVisible     = True
+		self.penColor      = (0, 0, 0)
 
-
-		"""
-		
-		self.baseX 		 = self.x + WIDTH*math.cos(self.orientation)
-		self.baseY 		 = self.y + WIDTH*math.sin(self.orientation)
-		self.leftX       = self.x - HYPOTENUSE*math.cos(self.orientation - NOSEANGLE)
-		self.leftY       = self.y - HYPOTENUSE*math.sin(self.orientation - NOSEANGLE)
-		self.rightX      = self.x - HYPOTENUSE*math.cos(self.orientation + NOSEANGLE)
-		self.rightY      = self.y - HYPOTENUSE*math.sin(self.orientation + NOSEANGLE)
-
-		self.spineLine   = Line(Point(self.x,self.y), Point(self.baseX , self.baseY))
-		self.baseLine    = Line(Point(self.leftX,self.leftY),Point(self.rightX,self.rightY))
-		self.leftLine    = Line(Point(self.x, self.y), Point(self.leftX, self.leftY))
-		self.rightLine   = Line(Point(self.x, self.y), Point(self.rightX, self.rightY))
-		"""
 
 
 	def hideTurtle(self):
@@ -48,49 +35,28 @@ class Turtle:
 	def penDown(self):
 		self.isPenUp = False
 
-	def updatePos(self):
-		"""
-		self.baseX 		 = self.x + WIDTH*math.cos(self.orientation)
-		self.baseY 		 = self.y + WIDTH*math.sin(self.orientation)
-		self.leftX       = self.x - HYPOTENUSE*math.cos(self.orientation - NOSEANGLE)
-		self.leftY       = self.y - HYPOTENUSE*math.sin(self.orientation - NOSEANGLE)
-		self.rightX      = self.x - HYPOTENUSE*math.cos(self.orientation + NOSEANGLE)
-		self.rightY      = self.y - HYPOTENUSE*math.sin(self.orientation + NOSEANGLE)
+	def setPenColor(self, red,green,blue):
+		#print red + green + blue
+		self.penColor = (red, green, blue)
 
-		self.spineLine   = Line(Point(self.x,self.y), Point(self.baseX , self.baseY))
-		self.baseLine    = Line(Point(self.leftX,self.leftY),Point(self.rightX,self.rightY))
-		self.leftLine    = Line(Point(self.x, self.y), Point(self.leftX, self.leftY))
-		"""
 
 	def draw(self, screen):
-		"""
-		self.spineLine.draw(mainWindow)
-		self.baseLine.draw(mainWindow)
-		self.leftLine.draw(mainWindow)
-		self.rightLine.draw(mainWindow)
-		"""
 		if self.isVisible:
 			screen.blit(self.image, self.imageRect)
 		if self.pointStart is not None:
-			for px,py in zip(self.pointStart, self.pointEnd):
-				pygame.draw.line(screen, (255,0,0), px, py, 2)
+			for px,py,pc in zip(self.pointStart, self.pointEnd, self.lineColor):
+				pygame.draw.line(screen, pc , px, py, 2)
 
 	def spin(self):
 		for i in range(0,90):
 			self.spineLine.move(20,0)
-	def getImage(self, image):
+	def setImage(self, image):
 		self.image = image
-		#self.image = pygame.transform.scale(self.image, (TURTLE_WIDTH, TURTLE_HEIGHT))
 		self.imageSave = self.image
 		self.imageRect = image.get_rect()
-		#self.x = WINDOWX/2 - TURTLE_WIDTH/2
-		#self.y = WINDOWY/2 - TURTLE_HEIGHT/2
 		self.imageRect = self.imageRect.move([self.x , self.y ])
-		#self.x += TURTLE_WIDTH/2
-		#self.y += TURTLE_HEIGHT/2
 		self.x = self.imageRect.centerx
 		self.y = self.imageRect.centery
-		print self.x , self.y
 
 	def rotate(self, angle):
 		self.angle += angle
@@ -100,29 +66,26 @@ class Turtle:
 	def mvForward(self, distance, screen):
 		if self.isPenUp == False:
 			self.pointStart.append((self.x, self.y))
-		#self.pointEnd.append((int(self.x + distance * math.cos(self.angleRad)),int(self.y - distance * math.sin(self.angleRad))))
-		#print self.points
-		#self.x = int(self.x + distance * math.cos(self.angleRad))
-		#self.y = int(self.y - distance * math.sin(self.angleRad))
+			self.lineColor.append(self.penColor)
+
 		self.imageRect = self.imageRect.move([int(distance * math.cos(self.angleRad)), int(-distance * math.sin(self.angleRad))])
 		self.x = self.imageRect.centerx
 		self.y = self.imageRect.centery
+
 		if self.isPenUp == False:
 			self.pointEnd.append((self.x,self.y))
-		print self.imageRect
+		#print self.imageRect
 	def mvBackward(self, distance, screen):
 		if self.isPenUp == False:
 			self.pointStart.append((self.x, self.y))
-		#self.pointEnd.append((int(self.x + distance * math.cos(self.angleRad)),int(self.y - distance * math.sin(self.angleRad))))
-		#print self.points
-		#self.x = int(self.x + distance * math.cos(self.angleRad))
-		#self.y = int(self.y - distance * math.sin(self.angleRad))
+			self.lineColor.append(self.penColor)
+
 		self.imageRect = self.imageRect.move([-int(distance * math.cos(self.angleRad)), int(distance * math.sin(self.angleRad))])
 		self.x = self.imageRect.centerx
 		self.y = self.imageRect.centery
+
 		if self.isPenUp == False:
 			self.pointEnd.append((self.x,self.y))
-		print self.imageRect
 
 
 def rot_center(orig_image, image, angle):
